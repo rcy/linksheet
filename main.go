@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/zoom", getZoom)
+	http.HandleFunc("/sesh", getSesh)
 
 	err := http.ListenAndServe(":3333", nil)
 	if errors.Is(err, http.ErrServerClosed) {
@@ -19,8 +19,6 @@ func main() {
 		os.Exit(1)
 	}
 }
-func getZoom(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("getZoom redirect\n")
-	// io.WriteString(w, "This is my website!\n")
-	http.Redirect(w, r, "https://www.gnu.org", http.StatusSeeOther)
+func getSesh(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://us02web.zoom.us/j/3499596140?pwd=bldEUStXYWFKM3pUR3R0TlhwdE9tQT09", http.StatusSeeOther)
 }
