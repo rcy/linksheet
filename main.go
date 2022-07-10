@@ -15,7 +15,7 @@ func main() {
 	linkmap.Init(600 * time.Second)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/sync", handleSync)
+	r.HandleFunc("/_sync", handleSync)
 	r.HandleFunc("/{alias}", handleAlias)
 
 	http.Handle("/", r)
