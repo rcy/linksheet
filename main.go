@@ -1,24 +1,50 @@
 package main
 
 import (
-	"net/http"
-	"fmt"
-	//	"io"
 	"errors"
+	"fmt"
+	"github.com/gorilla/mux"
+	"io"
+	"net/http"
 	"os"
+	"rcy/home/linkmap"
+	"time"
 )
 
 func main() {
-	http.HandleFunc("/sesh", getSesh)
+	linkmap.Init(600 * time.Second)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/sync", handleSync)
+	r.HandleFunc("/{alias}", handleAlias)
+
+	http.Handle("/", r)
 
 	err := http.ListenAndServe(":3333", nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
 	} else if err != nil {
-		fmt.Printf("error starting server: %s\n", err)
 		os.Exit(1)
 	}
 }
-func getSesh(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "https://us02web.zoom.us/j/3499596140?pwd=bldEUStXYWFKM3pUR3R0TlhwdE9tQT09", http.StatusSeeOther)
+
+func handleAlias(w http.ResponseWriter, r *http.Request) {
+	alias := mux.Vars(r)["alias"]
+	target := linkmap.Lookup(alias)
+	if target != "" {
+		http.Redirect(w, r, target, http.StatusSeeOther)
+	} else {
+		str := fmt.Sprintf("%s not found\n", alias)
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, str)
+	}
+}
+
+func handleSync(w http.ResponseWriter, r *http.Request) {
+	err := linkmap.Sync()
+	if err != nil {
+		w.WriteHeader(500)
+	}
+	
+	io.WriteString(w, "sync")
 }
