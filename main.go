@@ -3,12 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"rcy/home/linkmap"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -31,8 +33,17 @@ func main() {
 func handleAlias(w http.ResponseWriter, r *http.Request) {
 	alias := mux.Vars(r)["alias"]
 	target := linkmap.Lookup(alias)
+
 	if target != "" {
-		http.Redirect(w, r, target, http.StatusSeeOther)
+		targetURL, err := url.Parse(target)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+		// pass along the original query
+		targetURL.RawQuery = r.URL.RawQuery
+
+		http.Redirect(w, r, targetURL.String(), http.StatusSeeOther)
 	} else {
 		str := fmt.Sprintf("%s not found\n", alias)
 		w.WriteHeader(http.StatusNotFound)
@@ -45,6 +56,6 @@ func handleSync(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 	}
-	
+
 	io.WriteString(w, "sync")
 }
