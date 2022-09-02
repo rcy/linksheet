@@ -40,8 +40,10 @@ func handleAlias(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		// pass along the original query
-		targetURL.RawQuery = r.URL.RawQuery
+		// pass along the request query string, unless the target already has one
+		if targetURL.RawQuery == "" {
+			targetURL.RawQuery = r.URL.RawQuery
+		}
 
 		http.Redirect(w, r, targetURL.String(), http.StatusSeeOther)
 	} else {
