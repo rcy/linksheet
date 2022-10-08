@@ -17,6 +17,7 @@ func main() {
 	linkmap.Init(600 * time.Second)
 
 	r := mux.NewRouter()
+	r.HandleFunc("/", handleHome)
 	r.HandleFunc("/_sync", handleSync)
 	r.HandleFunc("/{alias}", handleAlias)
 
@@ -28,6 +29,10 @@ func main() {
 	} else if err != nil {
 		os.Exit(1)
 	}
+}
+
+func handleHome(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }
 
 func handleAlias(w http.ResponseWriter, r *http.Request) {
