@@ -54,10 +54,12 @@ func handleAlias(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSync(w http.ResponseWriter, r *http.Request) {
-	err := linkmap.Sync()
+	csvmap, err := linkmap.Sync()
 	if err != nil {
 		w.WriteHeader(500)
+		return
 	}
 
-	io.WriteString(w, "sync")
+	msg := fmt.Sprintf("%d links", len(csvmap))
+	io.WriteString(w, msg)
 }

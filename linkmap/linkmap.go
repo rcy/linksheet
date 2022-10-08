@@ -20,7 +20,7 @@ var lastLookupAt time.Time
 func Init(refresh time.Duration) error {
 	log.Println("linkmap.Init", refresh)
 
-	err := Sync()
+	_, err := Sync()
 	if err != nil {
 		return err
 	}
@@ -34,27 +34,27 @@ func syncLoop(refresh time.Duration) {
 	for {
 		time.Sleep(refresh)
 		Sync()
-	}	
+	}
 }
 
-func Sync() error {
+func Sync() (map[string]string, error) {
 	log.Println("linkmap.Sync")
 
 	csvbytes, err := download(csvUrl)
 	if err != nil {
-		return err
+		return csvmap, err
 	}
 	csvmap, err = csv2map(csvbytes)
 	if err != nil {
-		return err
+		return csvmap, err
 	}
 
 	lastLookupAt = time.Now()
 
-	return nil
+	return csvmap, nil
 }
 
-func Lookup(alias string) (string) {
+func Lookup(alias string) string {
 	target := csvmap[alias]
 	log.Printf("linkmap.Lookup(%s) => %s", alias, target)
 	return target
