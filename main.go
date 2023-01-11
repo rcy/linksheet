@@ -32,7 +32,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleHome)
 	r.HandleFunc("/_sync", handleSync)
-	r.HandleFunc("/{alias}", handleAlias)
+	r.HandleFunc("/{alias}", handleLookup)
 
 	http.Handle("/", r)
 
@@ -50,7 +50,7 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }
 
-func handleAlias(w http.ResponseWriter, r *http.Request) {
+func handleLookup(w http.ResponseWriter, r *http.Request) {
 	alias := mux.Vars(r)["alias"]
 	target := Links.Lookup(alias)
 	log.Printf("linkmap.Lookup(%s) => %s", alias, target)
