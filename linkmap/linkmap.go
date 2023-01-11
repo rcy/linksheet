@@ -96,7 +96,7 @@ func csv2map(input []byte) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, row := range data[1:] {
+	for _, row := range data {
 		res[row[0]] = row[1]
 	}
 	return res, nil
