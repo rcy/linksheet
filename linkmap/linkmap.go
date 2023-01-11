@@ -11,59 +11,69 @@ import (
 	"time"
 )
 
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSdgZd_zTa2yympVBgqBTHWgyZ00_TtVV9BRYZDZKzNYo8ArtjqH6oTVlRbCWbbzl3Sg__f_kE9Pwg0/pub?gid=0&single=true&output=csv"
+type LinkMap struct {
+	Url          string
+	csvmap       map[string]string
+	lastLookupAt time.Time
+}
 
-var csvmap map[string]string
+func Init(url string) (*LinkMap, error) {
+	m := &LinkMap{Url: url}
 
-var lastLookupAt time.Time
+	err := m.Sync()
+	if err != nil {
+		return m, err
+	}
 
-func Init(refresh time.Duration) error {
-	log.Println("linkmap.Init", refresh)
+	go m.loop(600 * time.Second)
 
-	_, err := Sync()
+	return m, nil
+}
+
+func (m *LinkMap) Lookup(alias string) string {
+	log.Printf("Lookup %d %s %s", len(m.csvmap), alias, m.csvmap[alias])
+	return m.csvmap[alias]
+}
+
+func (m *LinkMap) loop(refresh time.Duration) {
+	for {
+		time.Sleep(refresh)
+		m.Sync()
+	}
+}
+
+func (m *LinkMap) Sync() error {
+	log.Println("linkmap.Sync")
+
+	csvbytes, err := download(m.Url)
+	if err != nil {
+		return err
+	}
+	m.csvmap, err = csv2map(csvbytes)
 	if err != nil {
 		return err
 	}
 
-	go syncLoop(refresh)
+	m.lastLookupAt = time.Now()
+
+	log.Printf("synced %v items", len(m.csvmap))
 
 	return nil
 }
 
-func syncLoop(refresh time.Duration) {
-	for {
-		time.Sleep(refresh)
-		Sync()
-	}
-}
-
-func Sync() (map[string]string, error) {
-	log.Println("linkmap.Sync")
-
-	csvbytes, err := download(csvUrl)
-	if err != nil {
-		return csvmap, err
-	}
-	csvmap, err = csv2map(csvbytes)
-	if err != nil {
-		return csvmap, err
-	}
-
-	lastLookupAt = time.Now()
-
-	return csvmap, nil
-}
-
-func Lookup(alias string) string {
-	target := csvmap[alias]
-	log.Printf("linkmap.Lookup(%s) => %s", alias, target)
-	return target
+func (m *LinkMap) Count() int {
+	return len(m.csvmap)
 }
 
 func download(url string) ([]byte, error) {
 	client := http.Client{Timeout: time.Duration(10 * time.Second)}
 
 	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +85,6 @@ func download(url string) ([]byte, error) {
 	contentType := resp.Header["Content-Type"][0]
 	if contentType != "text/csv" {
 		return nil, errors.New(fmt.Sprintf("Content-type: %s, want text/csv", contentType))
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
 	}
 
 	return b, nil

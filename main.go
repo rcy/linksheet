@@ -4,17 +4,30 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"rcy/home/linkmap"
-	"time"
 
 	"github.com/gorilla/mux"
 )
 
+var Links *linkmap.LinkMap = nil
+
 func main() {
-	linkmap.Init(600 * time.Second)
+	csvUrl, ok := os.LookupEnv("GOOGLE_SHEET")
+	if !ok {
+		log.Fatalf("GOOGLE_SHEET not found in environment")
+	}
+
+	links, err := linkmap.Init(csvUrl)
+
+	if err != nil {
+		log.Fatalf("could not initialize linkmap from url %s: %s", csvUrl, err)
+	}
+
+	Links = links
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleHome)
@@ -23,7 +36,9 @@ func main() {
 
 	http.Handle("/", r)
 
-	err := http.ListenAndServe(":3333", nil)
+	fmt.Println("listening on port 3333")
+
+	err = http.ListenAndServe(":3333", nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
 	} else if err != nil {
@@ -37,7 +52,7 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 
 func handleAlias(w http.ResponseWriter, r *http.Request) {
 	alias := mux.Vars(r)["alias"]
-	target := linkmap.Lookup(alias)
+	target := Links.Lookup(alias)
 
 	if target != "" {
 		targetURL, err := url.Parse(target)
@@ -59,12 +74,12 @@ func handleAlias(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSync(w http.ResponseWriter, r *http.Request) {
-	csvmap, err := linkmap.Sync()
+	err := Links.Sync()
 	if err != nil {
 		w.WriteHeader(500)
 		return
 	}
 
-	msg := fmt.Sprintf("%d links", len(csvmap))
+	msg := fmt.Sprintf("%d links", Links.Count())
 	io.WriteString(w, msg)
 }
