@@ -31,7 +31,6 @@ func Init(url string) (*LinkMap, error) {
 }
 
 func (m *LinkMap) Lookup(alias string) string {
-	log.Printf("Lookup %d %s %s", len(m.csvmap), alias, m.csvmap[alias])
 	return m.csvmap[alias]
 }
 

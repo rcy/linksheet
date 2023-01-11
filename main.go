@@ -53,6 +53,7 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 func handleAlias(w http.ResponseWriter, r *http.Request) {
 	alias := mux.Vars(r)["alias"]
 	target := Links.Lookup(alias)
+	log.Printf("linkmap.Lookup(%s) => %s", alias, target)
 
 	if target != "" {
 		targetURL, err := url.Parse(target)
