@@ -1,4 +1,4 @@
-module rcy/home
+module rcy/linksheet
 
 go 1.17
 
