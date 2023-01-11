@@ -16,9 +16,9 @@ import (
 var Links *linkmap.LinkMap = nil
 
 func main() {
-	csvUrl, ok := os.LookupEnv("GOOGLE_SHEET")
+	csvUrl, ok := os.LookupEnv("CSV_URL")
 	if !ok {
-		log.Fatalf("GOOGLE_SHEET not found in environment")
+		log.Fatalf("$CSV_URL not found in environment")
 	}
 
 	links, err := linkmap.Init(csvUrl)
