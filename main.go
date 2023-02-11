@@ -17,8 +17,15 @@ import (
 )
 
 var Links *linkmap.LinkMap = nil
+var Password string
 
 func main() {
+	var ok bool
+	Password, ok = os.LookupEnv("PASSWORD")
+	if !ok {
+		log.Fatalf("$PASSWORD not found in environment")
+	}
+
 	csvUrl, ok := os.LookupEnv("CSV_URL")
 	if !ok {
 		log.Fatalf("$CSV_URL not found in environment")
@@ -105,6 +112,14 @@ func handleSync(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRequests(w http.ResponseWriter, r *http.Request) {
+	u, p, ok := r.BasicAuth()
+	if !ok || u != "admin" || p != Password {
+		w.Header().Add("WWW-Authenticate", `Basic realm="hold up"`)
+		w.WriteHeader(http.StatusUnauthorized)
+		io.WriteString(w, "unauthorized")
+		return
+	}
+
 	requests, err := db.Requests()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
