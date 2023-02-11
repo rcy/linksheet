@@ -21,13 +21,12 @@ func main() {
 		log.Fatalf("$CSV_URL not found in environment")
 	}
 
-	links, err := linkmap.Init(csvUrl)
+	var err error
+	Links, err = linkmap.Init(csvUrl)
 
 	if err != nil {
 		log.Fatalf("could not initialize linkmap from url %s: %s", csvUrl, err)
 	}
-
-	Links = links
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleHome)
