@@ -50,8 +50,9 @@ func main() {
 
 	err = http.ListenAndServe(":3333", nil)
 	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("server closed\n")
+		log.Printf("server closed\n")
 	} else if err != nil {
+		log.Printf("server closed unexpectedly: %v\n", err)
 		os.Exit(1)
 	}
 }
