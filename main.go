@@ -40,6 +40,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleHome)
+	r.HandleFunc("/favicon.ico", handleFavIcon)
 	r.HandleFunc("/_sync", handleSync)
 	r.HandleFunc("/_requests", handleRequests)
 	r.HandleFunc("/{alias}", handleLookup)
@@ -71,6 +72,10 @@ func readUserIP(r *http.Request) string {
 		return hostport
 	}
 	return host
+}
+
+func handleFavIcon(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(204)
 }
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
