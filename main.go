@@ -42,7 +42,7 @@ func main() {
 	r.HandleFunc("/", handleHome)
 	r.HandleFunc("/favicon.ico", handleFavIcon)
 	r.HandleFunc("/_sync", handleSync)
-	r.HandleFunc("/_requests", handleRequests)
+	r.HandleFunc("/_requests", withAuth(handleRequests))
 	r.HandleFunc("/{alias}", handleLookup)
 
 	http.Handle("/", r)
@@ -55,6 +55,19 @@ func main() {
 	} else if err != nil {
 		log.Printf("server closed unexpectedly: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+func withAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		if !ok || u != "admin" || p != Password {
+			w.Header().Add("WWW-Authenticate", `Basic realm="hold up"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			io.WriteString(w, "unauthorized")
+			return
+		}
+		handler(w, r)
 	}
 }
 
@@ -118,14 +131,6 @@ func handleSync(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRequests(w http.ResponseWriter, r *http.Request) {
-	u, p, ok := r.BasicAuth()
-	if !ok || u != "admin" || p != Password {
-		w.Header().Add("WWW-Authenticate", `Basic realm="hold up"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		io.WriteString(w, "unauthorized")
-		return
-	}
-
 	requests, err := db.Requests()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
