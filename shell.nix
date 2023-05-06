@@ -4,5 +4,6 @@ mkShell {
     go
     sqlite
     flyctl
+    google-cloud-sdk
   ];
 }
