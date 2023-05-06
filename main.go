@@ -43,6 +43,7 @@ func main() {
 	r.HandleFunc("/favicon.ico", handleFavIcon)
 	r.HandleFunc("/_sync", handleSync)
 	r.HandleFunc("/_requests", withAuth(handleRequests))
+	r.HandleFunc("/linksheet.db", withAuth(handleDb))
 	r.HandleFunc("/{alias}", handleLookup)
 
 	http.Handle("/", r)
@@ -140,4 +141,42 @@ func handleRequests(w http.ResponseWriter, r *http.Request) {
 	for _, r := range requests {
 		io.WriteString(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\n", r.CreatedAt, r.Ip, r.Status, r.Alias, r.Target))
 	}
+}
+
+func handleDb(w http.ResponseWriter, r *http.Request) {
+	filename, ok := os.LookupEnv("DB_FILE")
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, "internal server error")
+		return
+	}
+
+	// Open the file for reading
+	file, err := os.Open(filename)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Get the file size
+	stat, err := file.Stat()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	size := stat.Size()
+
+	// Read the contents of the file
+	buffer := make([]byte, size)
+	_, err = file.Read(buffer)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Write the contents of the file to the ResponseWriter
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", "attachment; filename=linksheet.db")
+	w.Write(buffer)
 }
