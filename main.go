@@ -44,7 +44,7 @@ func main() {
 	r.Get("/_sync", handleSync)
 	r.Get("/_requests", handleRequests)
 	r.Get("/linksheet.db", withAuth(handleDb))
-	r.Get("/{alias}", handleLookup)
+	r.Get("/*", handleLookup)
 
 	http.Handle("/", r)
 
@@ -93,7 +93,7 @@ func handleFavIcon(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
-	alias := chi.URLParam(r, "alias")
+	alias := strings.TrimPrefix(r.URL.Path, "/")
 	target := Links.Lookup(alias)
 	ip := readUserIP(r)
 
