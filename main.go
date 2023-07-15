@@ -48,7 +48,7 @@ func main() {
 
 	http.Handle("/", r)
 
-	fmt.Println("listening on port 3333")
+	log.Print("listening on port 3333")
 
 	err = http.ListenAndServe(":3333", nil)
 	if errors.Is(err, http.ErrServerClosed) {
