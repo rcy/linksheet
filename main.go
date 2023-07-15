@@ -13,7 +13,7 @@ import (
 	"rcy/linksheet/linkmap"
 	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 )
 
 var Links *linkmap.LinkMap = nil
@@ -38,13 +38,13 @@ func main() {
 		log.Fatalf("could not initialize linkmap from url %s: %s", csvUrl, err)
 	}
 
-	r := mux.NewRouter()
-	r.HandleFunc("/", handleHome)
-	r.HandleFunc("/favicon.ico", handleFavIcon)
-	r.HandleFunc("/_sync", handleSync)
-	r.HandleFunc("/_requests", withAuth(handleRequests))
-	r.HandleFunc("/linksheet.db", withAuth(handleDb))
-	r.HandleFunc("/{alias}", handleLookup)
+	r := chi.NewRouter()
+	r.Get("/", handleHome)
+	r.Get("/favicon.ico", handleFavIcon)
+	r.Get("/_sync", handleSync)
+	r.Get("/_requests", handleRequests)
+	r.Get("/linksheet.db", withAuth(handleDb))
+	r.Get("/{alias}", handleLookup)
 
 	http.Handle("/", r)
 
@@ -93,7 +93,7 @@ func handleFavIcon(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
-	alias := mux.Vars(r)["alias"]
+	alias := chi.URLParam(r, "alias")
 	target := Links.Lookup(alias)
 	ip := readUserIP(r)
 
