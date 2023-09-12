@@ -3,21 +3,18 @@ package linkmap
 import (
 	"bytes"
 	"encoding/csv"
-	"errors"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 )
 
 type LinkMap struct {
 	Url          string
+	csvbytes     []byte
 	csvmap       map[string]string
 	lastLookupAt time.Time
 }
 
-func Init(url string) (*LinkMap, error) {
+func NewFromURL(url string) (*LinkMap, error) {
 	m := &LinkMap{Url: url}
 
 	err := m.Sync()
@@ -44,11 +41,13 @@ func (m *LinkMap) loop(refresh time.Duration) {
 func (m *LinkMap) Sync() error {
 	log.Println("linkmap.Sync")
 
-	csvbytes, err := download(m.Url)
+	bytes, err := download(m.Url)
 	if err != nil {
 		return err
 	}
-	m.csvmap, err = csv2map(csvbytes)
+	m.csvbytes = bytes
+
+	err = m.csv2map()
 	if err != nil {
 		return err
 	}
@@ -64,40 +63,16 @@ func (m *LinkMap) Count() int {
 	return len(m.csvmap)
 }
 
-func download(url string) ([]byte, error) {
-	client := http.Client{Timeout: time.Duration(10 * time.Second)}
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("Status code: %d", resp.StatusCode))
-	}
-
-	contentType := resp.Header["Content-Type"][0]
-	if contentType != "text/csv" {
-		return nil, errors.New(fmt.Sprintf("Content-type: %s, want text/csv", contentType))
-	}
-
-	return b, nil
-}
-
-func csv2map(input []byte) (map[string]string, error) {
+func (m *LinkMap) csv2map() error {
 	res := map[string]string{}
-	reader := bytes.NewReader(input)
+	reader := bytes.NewReader(m.csvbytes)
 	data, err := csv.NewReader(reader).ReadAll()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	for _, row := range data {
 		res[row[0]] = row[1]
 	}
-	return res, nil
+	m.csvmap = res
+	return nil
 }

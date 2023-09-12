@@ -32,7 +32,7 @@ func main() {
 	}
 
 	var err error
-	Links, err = linkmap.Init(csvUrl)
+	Links, err = linkmap.NewFromURL(csvUrl)
 
 	if err != nil {
 		log.Fatalf("could not initialize linkmap from url %s: %s", csvUrl, err)
