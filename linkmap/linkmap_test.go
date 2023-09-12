@@ -19,6 +19,7 @@ func TestLookup(t *testing.T) {
 	m := NewFromCSVString(`
 foo,https://example.com/foo
 bar/1,https://example.com/barone
+wild/*,https://example.com/*
 `)
 
 	for _, tc := range []struct {
@@ -32,6 +33,22 @@ bar/1,https://example.com/barone
 		{
 			alias: "bar/1",
 			want:  "https://example.com/barone",
+		},
+		{
+			alias: "bogus",
+			want:  "",
+		},
+		{
+			alias: "wild/12345",
+			want:  "https://example.com/12345",
+		},
+		{
+			alias: "wild/12345/6789",
+			want:  "https://example.com/12345/6789",
+		},
+		{
+			alias: "wild",
+			want:  "",
 		},
 	} {
 		t.Run(tc.alias, func(t *testing.T) {

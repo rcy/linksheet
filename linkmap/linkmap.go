@@ -3,7 +3,10 @@ package linkmap
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"log"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -32,8 +35,38 @@ func NewFromURL(url string) (*LinkMap, error) {
 	return m, nil
 }
 
-func (m *LinkMap) Lookup(alias string) string {
-	return m.csvmap[alias]
+var re = regexp.MustCompile("(.+)([*])")
+
+func (m *LinkMap) Lookup(input string) string {
+	res := m.csvmap[input]
+	if res != "" {
+		return res
+	}
+	for pat, target := range m.csvmap {
+		fmt.Printf("%s %s %s\n", input, pat, target)
+		// pat    = wild/*
+		// target = example.com/*
+		// input  = wild/12345
+		// output = example.com/12345
+
+		patMatches := re.FindStringSubmatch(pat) // wild/, *
+		if patMatches == nil {
+			fmt.Printf("patMatches: %s\n", patMatches)
+			continue
+		}
+		targetMatches := re.FindStringSubmatch(target) // example.com/, *
+		if targetMatches == nil {
+			fmt.Printf("targetMatches: %s\n", targetMatches)
+			continue
+		}
+		replacement := strings.TrimPrefix(input, patMatches[1]) // wild/12345 -> 12345
+		if replacement == input {
+			continue
+		}
+
+		return targetMatches[1] + replacement // example.com/12345
+	}
+	return ""
 }
 
 func (m *LinkMap) loop(refresh time.Duration) {
