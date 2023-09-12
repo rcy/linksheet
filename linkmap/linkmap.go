@@ -8,13 +8,13 @@ import (
 )
 
 type LinkMap struct {
-	Url      string
+	url      string
 	csvbytes []byte
 	csvmap   map[string]string
 }
 
 func NewFromURL(url string) (*LinkMap, error) {
-	m := &LinkMap{Url: url}
+	m := &LinkMap{url: url}
 
 	err := m.Sync()
 	if err != nil {
@@ -40,7 +40,7 @@ func (m *LinkMap) loop(refresh time.Duration) {
 func (m *LinkMap) Sync() error {
 	log.Println("linkmap.Sync")
 
-	bytes, err := download(m.Url)
+	bytes, err := download(m.url)
 	if err != nil {
 		return err
 	}
