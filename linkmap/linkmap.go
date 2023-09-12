@@ -13,6 +13,12 @@ type LinkMap struct {
 	csvmap   map[string]string
 }
 
+func NewFromCSVString(csv string) *LinkMap {
+	m := &LinkMap{csvbytes: []byte(csv)}
+	m.csv2map()
+	return m
+}
+
 func NewFromURL(url string) (*LinkMap, error) {
 	m := &LinkMap{url: url}
 
