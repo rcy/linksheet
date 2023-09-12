@@ -8,10 +8,9 @@ import (
 )
 
 type LinkMap struct {
-	Url          string
-	csvbytes     []byte
-	csvmap       map[string]string
-	lastLookupAt time.Time
+	Url      string
+	csvbytes []byte
+	csvmap   map[string]string
 }
 
 func NewFromURL(url string) (*LinkMap, error) {
@@ -51,8 +50,6 @@ func (m *LinkMap) Sync() error {
 	if err != nil {
 		return err
 	}
-
-	m.lastLookupAt = time.Now()
 
 	log.Printf("synced %v items", len(m.csvmap))
 
