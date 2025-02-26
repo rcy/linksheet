@@ -1,5 +1,5 @@
 run:
-	go run main.go
+	air
 
 build:
 	docker build -t rcy0/linksheet:latest .
