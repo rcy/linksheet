@@ -1,10 +1,12 @@
-FROM golang:1.19-alpine as builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /work
 COPY go.mod go.sum main.go .
 ADD linkmap linkmap
+ADD db db
 RUN go build -o /app
 
-FROM alpine:latest as production
+FROM alpine:latest AS production
 COPY --from=builder /app .
 EXPOSE 3333
-CMD ./app
+CMD ["./app"]
+

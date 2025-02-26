@@ -6,3 +6,6 @@ build:
 
 publish:
 	docker push rcy0/linksheet:latest
+
+deploy:
+	fly deploy

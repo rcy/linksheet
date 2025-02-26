@@ -1,6 +1,6 @@
 module rcy/linksheet
 
-go 1.17
+go 1.24.0
 
 require (
 	github.com/BurntSushi/migration v0.0.0-20140125045755-c45b897f1335
