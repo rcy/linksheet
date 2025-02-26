@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/vincent-petithory/dataurl"
 )
 
 var Links *linkmap.LinkMap = nil
@@ -105,13 +106,29 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		// pass along the request query string, unless the target already has one
-		if targetURL.RawQuery == "" {
-			targetURL.RawQuery = r.URL.RawQuery
-		}
 
-		http.Redirect(w, r, targetURL.String(), http.StatusSeeOther)
-		db.TrackRequest(ip, alias, target, http.StatusSeeOther)
+		switch targetURL.Scheme {
+		case "data":
+			// serve the content of data urls directly
+			dataURL, err := dataurl.DecodeString(targetURL.String())
+			if err != nil {
+				http.Error(w, "DecodeString: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Add("Content-Type", dataURL.ContentType())
+			_, err = w.Write(dataURL.Data)
+			if err != nil {
+				http.Error(w, "Write: "+err.Error(), http.StatusInternalServerError)
+			}
+			db.TrackRequest(ip, alias, target, http.StatusOK)
+		default:
+			// pass along the request query string, unless the target already has one
+			if targetURL.RawQuery == "" {
+				targetURL.RawQuery = r.URL.RawQuery
+			}
+
+			http.Redirect(w, r, targetURL.String(), http.StatusSeeOther)
+		}
 	} else {
 		str := fmt.Sprintf("%s not found\n", alias)
 		w.WriteHeader(http.StatusNotFound)
