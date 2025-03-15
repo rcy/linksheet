@@ -98,14 +98,21 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	target := Links.Lookup(alias)
 	ip := readUserIP(r)
 
-	log.Printf("%s|%s|%s", ip, alias, target)
-
 	if target != "" {
 		targetURL, err := url.Parse(target)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			// its not a url, just serve it up as html
+			w.Header().Add("Content-Type", "text/html")
+			_, err = w.Write([]byte(target))
+			if err != nil {
+				http.Error(w, "Write: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			db.TrackRequest(ip, alias, target, http.StatusOK)
 			return
 		}
+
+		log.Printf("%s|%s|%s|%s", ip, alias, target, targetURL)
 
 		switch targetURL.Scheme {
 		case "data":
@@ -121,13 +128,24 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Write: "+err.Error(), http.StatusInternalServerError)
 			}
 			db.TrackRequest(ip, alias, target, http.StatusOK)
-		default:
+		case "http", "https":
 			// pass along the request query string, unless the target already has one
 			if targetURL.RawQuery == "" {
 				targetURL.RawQuery = r.URL.RawQuery
 			}
 
 			http.Redirect(w, r, targetURL.String(), http.StatusSeeOther)
+			db.TrackRequest(ip, alias, target, http.StatusOK)
+		default:
+			// just serve up whatever it is as html
+			w.Header().Add("Content-Type", "text/html")
+			_, err = w.Write([]byte(target))
+			if err != nil {
+				http.Error(w, "Write: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			db.TrackRequest(ip, alias, target, http.StatusOK)
+			return
 		}
 	} else {
 		str := fmt.Sprintf("%s not found\n", alias)
