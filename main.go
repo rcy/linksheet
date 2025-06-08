@@ -44,6 +44,7 @@ func main() {
 	r.Get("/favicon.ico", handleFavIcon)
 	r.Get("/_sync", handleSync)
 	r.Get("/_requests", handleRequests)
+	r.Get("/_vibe", handleVibe)
 	r.Get("/linksheet.db", withAuth(handleDb))
 	r.Get("/*", handleLookup)
 
@@ -214,4 +215,27 @@ func handleDb(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename=linksheet.db")
 	w.Write(buffer)
+}
+
+func handleVibe(w http.ResponseWriter, r *http.Request) {
+	contentURL := r.FormValue("url")
+
+	parsedURL, err := url.Parse(contentURL)
+	if parsedURL.Host != "gist.githubusercontent.com" {
+		http.Error(w, "host not allowed", http.StatusBadRequest)
+		return
+	}
+
+	resp, err := http.Get(parsedURL.String())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(bytes)
 }
