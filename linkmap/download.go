@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -26,8 +27,8 @@ func download(url string) ([]byte, error) {
 	}
 
 	contentType := resp.Header["Content-Type"][0]
-	if contentType != "text/csv" {
-		return nil, errors.New(fmt.Sprintf("Content-type: %s, want text/csv", contentType))
+	if !strings.HasPrefix(contentType, "text/csv") {
+		return nil, errors.New(fmt.Sprintf("Content-type: %s, want text/csv.*", contentType))
 	}
 
 	return b, nil
